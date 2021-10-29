@@ -44,6 +44,7 @@ jobs:
           bison \
           flex \
           gcc \
+          libelf-dev \
           make
     - name: Checkout kernel
       uses: actions/checkout@v2
@@ -55,5 +56,17 @@ jobs:
       with:
         path: .config_fragments
         key: config_fragments
-    - name: Check fragments
+    - name: Print config fragments
       run: cat .config_fragments
+    - name: Build kernel
+      run: |
+        set -o errexit -o nounset -o pipefail
+        make x86_64_defconfig
+        ./scripts/kconfig/merge_config.sh .config .config_fragments
+        time make vmlinux --jobs=$(nproc)
+    - name: Upload vmlinux
+      uses: actions/upload-artifact@v2
+      with:
+        name: vmlinux
+        path: vmlinux
+        retention-days: 1
