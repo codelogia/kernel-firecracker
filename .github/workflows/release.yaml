@@ -9,9 +9,25 @@ on:
         required: true
 
 jobs:
-  build:
+  versions:
     runs-on: ubuntu-latest
-
+    steps:
+    - uses: actions/checkout@v2
+    - id: read_versions
+      run: |
+        set -o errexit -o nounset -o pipefail
+        repo_root=$(git rev-parse --show-toplevel)
+        versions_txt="${repo_root}/versions.txt"
+        jq_query='split("\n") | map(select(. != ""))'
+        echo "::set-output name=versions::$(jq --raw-input --compact-output --slurp "${jq_query}" "${versions_txt}")"
+    outputs:
+      versions: ${{ steps.read_versions.outputs.versions }}
+  build:
+    needs: versions
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.versions.outputs.versions) }}
+    runs-on: ubuntu-latest
     steps:
     - name: Install dependencies
       run: |
@@ -22,3 +38,6 @@ jobs:
           flex \
           gcc \
           make
+    - name: Print version
+      run: |
+        echo ${{ matrix.version }}
