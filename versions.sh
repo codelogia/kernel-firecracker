@@ -12,7 +12,7 @@ true > "${output}"
 
 while true; do
   url="https://api.github.com/repos/${owner}/${repo}/tags?per_page=${per_page}&page=${page}"
-  res=$(curl "${url}" | jq -r '.[].name | select(. | test("^v[4-9].[0-9]+$"))')
+  res=$(curl "${url}" | jq -r '.[].name | select(. | test("^v[5-9].[0-9]+$"))')
   if [ -z "${res}" ]; then
     break
   fi
