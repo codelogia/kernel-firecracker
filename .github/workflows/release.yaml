@@ -13,13 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - id: read_versions
+    - name: Populate output versions
+      id: read_versions
       run: |
         set -o errexit -o nounset -o pipefail
         repo_root=$(git rev-parse --show-toplevel)
         versions_txt="${repo_root}/versions.txt"
         jq_query='split("\n") | map(select(. != ""))'
         echo "::set-output name=versions::$(jq --raw-input --compact-output --slurp "${jq_query}" "${versions_txt}")"
+    - name: Cache config fragments
+      uses: actions/cache@v2
+      with:
+        path: .config_fragments
+        key: config_fragments
     outputs:
       versions: ${{ steps.read_versions.outputs.versions }}
   build:
@@ -31,6 +37,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
+        set -o errexit -o nounset -o pipefail
         sudo apt-get update
         sudo apt-get install -y \
           bc \
@@ -43,3 +50,10 @@ jobs:
       with:
         repository: torvalds/linux
         ref: ${{ matrix.version }}
+    - name: Cache config fragments
+      uses: actions/cache@v2
+      with:
+        path: .config_fragments
+        key: config_fragments
+    - name: Check fragments
+      run: cat .config_fragments
