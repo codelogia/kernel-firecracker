@@ -3,10 +3,6 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release_name:
-        description: The release name
-        default: ""
-        required: true
       min_version:
         description: The minimum kernel version
         default: v5.10
@@ -88,8 +84,11 @@ jobs:
         make x86_64_defconfig
         ./scripts/kconfig/merge_config.sh .config .config_fragments
     - name: Build kernel
+      id: build
       run: |
         set -o errexit -o nounset -o pipefail
+        echo "::set-output name=built_on::$(uname -a | sed 's/~/\\~/g')"
+        echo "::set-output name=gcc_version::$(gcc --version | head -n 1)"
         time make vmlinux --jobs=$(nproc)
         tar -czvf vmlinux-${{ matrix.version }}.tar.gz vmlinux
     - name: Upload kernel
@@ -98,16 +97,28 @@ jobs:
         name: vmlinux-${{ matrix.version }}.tar.gz
         path: vmlinux-${{ matrix.version }}.tar.gz
         retention-days: 1
+    outputs:
+      built_on: ${{ steps.build.outputs.built_on }}
+      gcc_version: ${{ steps.build.outputs.gcc_version }}
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - name: Set variables
+      id: set_variables
+      run: |
+        echo "::set-output name=date::$(date '+%d%m%Y')"
     - name: Download artifacts
       uses: actions/download-artifact@v2
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        name: ${{ github.event.inputs.release_name }}
+        name: release-${{ steps.set_variables.outputs.date }}
+        body: |-
+          Crafted with care for you!
+
+          Built on (uname -a): ${{ needs.build.outputs.built_on }}
+          C++ compiler (gcc --version): ${{ needs.build.outputs.gcc_version }}
         draft: true
         fail_on_unmatched_files: true
         files: '**/vmlinux-*.tar.gz'
