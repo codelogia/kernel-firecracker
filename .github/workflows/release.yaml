@@ -38,6 +38,8 @@ jobs:
           flex \
           gcc \
           make
-    - name: Print version
-      run: |
-        echo ${{ matrix.version }}
+    - name: Checkout kernel
+      uses: actions/checkout@v2
+      with:
+        repository: torvalds/linux
+        ref: ${{ matrix.version }}
