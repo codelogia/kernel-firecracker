@@ -3,7 +3,7 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      name:
+      release_name:
         description: The release name
         default: ""
         required: true
@@ -74,3 +74,16 @@ jobs:
         name: vmlinux-${{ matrix.version }}.tar.gz
         path: vmlinux-${{ matrix.version }}.tar.gz
         retention-days: 1
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ inputs.release_name }}
+        draft: true
+        fail_on_unmatched_files: true
+        files: vmlinux-*.tar.gz
