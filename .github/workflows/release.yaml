@@ -58,15 +58,19 @@ jobs:
         key: config_fragments
     - name: Print config fragments
       run: cat .config_fragments
-    - name: Build kernel
+    - name: Configure kernel
       run: |
         set -o errexit -o nounset -o pipefail
         make x86_64_defconfig
         ./scripts/kconfig/merge_config.sh .config .config_fragments
+    - name: Build kernel
+      run: |
+        set -o errexit -o nounset -o pipefail
         time make vmlinux --jobs=$(nproc)
-    - name: Upload vmlinux
+        tar -czvf vmlinux-${{ matrix.version }}.tar.gz vmlinux
+    - name: Upload kernel
       uses: actions/upload-artifact@v2
       with:
-        name: vmlinux
-        path: vmlinux
+        name: vmlinux-${{ matrix.version }}.tar.gz
+        path: vmlinux-${{ matrix.version }}.tar.gz
         retention-days: 1
