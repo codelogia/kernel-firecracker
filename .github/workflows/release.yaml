@@ -114,6 +114,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         name: release-${{ steps.set_variables.outputs.date }}
+        tag_name: release-${{ steps.set_variables.outputs.date }}
         body: |-
           Crafted with care for you!
 
